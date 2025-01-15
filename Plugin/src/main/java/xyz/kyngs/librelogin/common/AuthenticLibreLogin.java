@@ -302,13 +302,12 @@ public abstract class AuthenticLibreLogin<P, S> implements LibreLoginPlugin<P, S
         if (imageProjector != null) {
             if (!configuration.get(TOTP_ENABLED)) {
                 imageProjector = null;
-                logger.warn("2FA is disabled in the configuration, aborting...");
             } else {
                 imageProjector.enable();
             }
         }
 
-        totpProvider = imageProjector == null ? null : new AuthenticTOTPProvider(this);
+        totpProvider = configuration.get(TOTP_ENABLED) ? new AuthenticTOTPProvider(this) : null;
         eMailHandler = configuration.get(MAIL_ENABLED) ? new AuthenticEMailHandler(this) : null;
 
         authorizationProvider = new AuthenticAuthorizationProvider<>(this);
