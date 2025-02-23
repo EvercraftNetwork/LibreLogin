@@ -34,6 +34,7 @@ import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 import xyz.kyngs.librelogin.api.database.User;
 import xyz.kyngs.librelogin.common.AuthenticLibreLogin;
 import xyz.kyngs.librelogin.common.config.ConfigurationKeys;
+import xyz.kyngs.librelogin.common.config.MessageKeys;
 import xyz.kyngs.librelogin.common.listener.AuthenticListeners;
 import xyz.kyngs.librelogin.common.util.GeneralUtil;
 import xyz.kyngs.librelogin.paper.protocol.ClientPublicKey;
@@ -221,6 +222,11 @@ public class PaperListeners extends AuthenticListeners<PaperLibreLogin, Player, 
                 });
             }
 
+            if (Bukkit.getPlayer(username) != null) {
+                kickPlayer(plugin.getMessages().getMessage(MessageKeys.KICK_ALREADY_CONNECTED.key()), user);
+                return;
+            }
+
             if (plugin.fromFloodgate(username)) {
                 //Floodgate player, do not handle, only retransmit the packet. The UUID will be set by Floodgate
                 receiveFakeStartPacket(username, clientKey.orElse(null), event.getChannel(), UUID.randomUUID());
@@ -360,7 +366,7 @@ public class PaperListeners extends AuthenticListeners<PaperLibreLogin, Player, 
     }
 
     /**
-     * @author games647 and FastLogin contributors
+     * @author games647 and FastLogin contributors, kyngs
      */
     private boolean enableEncryption(SecretKey loginKey, com.github.retrooper.packetevents.protocol.player.User user, Object channel) throws IllegalArgumentException {
         // Initialize method reflections
@@ -371,7 +377,12 @@ public class PaperListeners extends AuthenticListeners<PaperLibreLogin, Player, 
             encryptMethod = Reflection.getMethod(networkManagerClass, "setupEncryption", SecretKey.class);
 
             if (encryptMethod == null) {
-                // Get the new encryption method
+                // Try to get the new encryption method
+                encryptMethod = Reflection.getMethod(networkManagerClass, "setEncryptionKey", SecretKey.class);
+            }
+
+            if (encryptMethod == null) {
+                // Get the 1.16.4-1.21.0 encryption method
                 encryptMethod = Reflection.getMethod(networkManagerClass, "setEncryptionKey", Cipher.class, Cipher.class);
 
                 // Get the needed Cipher helper method (used to generate ciphers from login key)
